@@ -25,3 +25,17 @@ This UART port has the following features:
 - Hardware flow control and synchronous operation are not supported.
 
 The UART port does not support the RS-232 level but only CMOS level. If the module’s UART port is connected to the UART port of a computer, it is necessary to add a level shift circuit between the module and the computer.
+
+## NMEA-Daten in Variablen speichern
+Um NMEA-Daten von Ihrem GPS-Modul in Variablen zu speichern, müssen Sie die empfangenen Daten zunächst analysieren und dann die relevanten Informationen auswählen und speichern. Hier sind einige Schritte, die Sie befolgen können, um NMEA-Daten in Variablen zu speichern:
+    Empfangen Sie die NMEA-Daten von Ihrem GPS-Modul über die serielle Schnittstelle und speichern Sie sie in einem Puffer.
+
+- Analysieren Sie den Puffer und suchen Sie nach den NMEA-Zeilen, die Informationen über die Position, Geschwindigkeit und Richtung des GPS-Empfängers enthalten. Diese Zeilen beginnen normalerweise mit "$GPGGA", "$GPRMC" oder "$GPVTG".
+
+- Verarbeiten Sie die gefundenen NMEA-Zeilen, um die relevanten Informationen zu extrahieren. Verwenden Sie beispielsweise die "strtok()" -Funktion in C oder eine ähnliche Funktion, um die Zeile in einzelne Teile zu zerlegen, die durch Kommas getrennt sind.
+
+- Speichern Sie die extrahierten Informationen in geeigneten Variablen. Zum Beispiel können Sie die Längen- und Breitengrad-Informationen in Fließkommazahlen speichern und die Zeitinformationen in einem Zeitstempel-Format speichern.
+
+- Verwenden Sie die gespeicherten Variablen, um Ihre Anwendung oder Ihre Benutzeroberfläche zu aktualisieren. Sie können die Positionsinformationen zum Beispiel auf einer Karte anzeigen oder die Geschwindigkeit und Richtung anzeigen.
+
+Es gibt auch verschiedene Bibliotheken und Frameworks, die Ihnen dabei helfen können, NMEA-Daten von Ihrem GPS-Modul zu verarbeiten und in Variablen zu speichern. Zum Beispiel gibt es die "TinyGPS++"-Bibliothek für Arduino, die Ihnen dabei hilft, GPS-Daten von Ihrem GPS-Modul zu verarbeiten und die relevanten Informationen in geeigneten Variablen zu speichern.
