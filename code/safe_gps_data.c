@@ -190,6 +190,10 @@ void secondTryTosafeGPGGA(String gpggaStr){
     Serial.print(": ");
     Serial.println(gpggaArray[i]);
   }
+    // Values we need 
+  String LatitudeStr = gpggaArray[2];
+  String LongitudeStr = gpggaArray[4];
+  String SatelliteStr = gpggaArray[7];
 
 }
 
