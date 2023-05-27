@@ -64,7 +64,7 @@ float gps_to_heading(float lat1, float lon1, float lat2, float lon2)
 	return heading_deg;
 }
 
-float combine_coords(int8_t degrees, int8_t minutes, int8_t seconds, int8_t seconds_decimal)
+float combine_coords(int8_t degrees, int8_t minutes, int8_t seconds)
 {
     float combined = 0.0;
 
@@ -72,7 +72,6 @@ float combine_coords(int8_t degrees, int8_t minutes, int8_t seconds, int8_t seco
     combined += (float)degrees;
     combined += (float)minutes / 60.0;
     combined += (float)seconds / 3600.0;
-    combined += (float)seconds_decimal / (100.0 * 3600.0);
 
     return combined;
 }
@@ -131,4 +130,29 @@ float get_distance(float lat1, float lon1, float lat2, float lon2)
     float distance = EARTH_RADIUS_KM * c;
 
     return distance;
+}
+
+_Bool setBuzzer(float distance, float threshhold){
+
+	if(distance < threshhold){
+		return true;
+	} else{
+		return false;
+	}
+}
+
+uint16_t setVibr(float headingIs, float headingMust, float rangeDeg){
+	uint16_t maxTim = 999;
+
+	float headingDiff = headingIs - headingMust;
+	if(headingDiff < 0.0){
+		headingDiff =+ 360.0;
+	}
+
+	if(headingDiff < rangeDeg){
+		return (uint16_t)(maxTim - ((rangeDeg - headingDiff) * (maxTim / rangeDeg)));
+	} else {
+		return maxTim;
+	}
+
 }

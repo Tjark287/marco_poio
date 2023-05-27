@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define GPS_FON_GPIO_Port GPIOB
 #define GPS_STDBY_Pin GPIO_PIN_15
 #define GPS_STDBY_GPIO_Port GPIOB
+#define UI_BUZZ_Pin GPIO_PIN_9
+#define UI_BUZZ_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

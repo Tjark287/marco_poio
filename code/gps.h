@@ -15,7 +15,7 @@ extern UART_HandleTypeDef huart1;
 
 #define GPS_receiveLen 500
 
-_Bool GPS_process(char *gpsData, double *latitude, double *longitude, uint8_t *numSatellites);
+_Bool GPS_process(char *gpsData, float *latitude, float *longitude, uint8_t *numSatellites);
 
 
 #endif /* INC_GPS_H_ */

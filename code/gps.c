@@ -11,20 +11,14 @@
 #include <main.h>
 #include <gps.h>
 #include <stdbool.h>
-#include <string.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-
-char GPS_recBuffer[GPS_receiveLen];
-uint16_t GPS_bufPoint = 0;
-
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
-_Bool GPS_process(char *gpsData, double *latitude, double *longitude, uint8_t *numSatellites)
+char GPS_recBuffer[GPS_receiveLen];
+uint16_t GPS_bufPoint = 0;
+
+_Bool GPS_process(char *gpsData, float *latitude, float *longitude, uint8_t *numSatellites)
 {
     if (gpsData == NULL)
     {
@@ -36,7 +30,7 @@ _Bool GPS_process(char *gpsData, double *latitude, double *longitude, uint8_t *n
     char *gpgga = strstr(gpsData, "GPGGA");
     char *gpgsa = strstr(gpsData, "GPGSA");
 
-    bool valid = false;
+    _Bool valid = false;
 
     // Parse GPRMC or GNRMC
     if (gprmc != NULL || gnrmc != NULL)
