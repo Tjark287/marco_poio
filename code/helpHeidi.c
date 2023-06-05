@@ -22,7 +22,7 @@ void serialPrint(const char *str, ...)
     char buffer[256];
     va_list args;
     va_start(args, str);
-    int len = vsnprintf(buffer, sizeof(buffer), str, args);
+    uint8_t len = vsnprintf(buffer, sizeof(buffer), str, args);
     va_end(args);
 
     // Add the newline character
@@ -34,89 +34,86 @@ void serialPrint(const char *str, ...)
     HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, HAL_MAX_DELAY);
 }
 
-float deg_to_radians(float degrees)
-{
-	return degrees * (M_PI / 180.0);
+float to_radians(float degrees) {
+    return degrees * M_PI / 180.0;
 }
 
-float gps_to_heading(float lat1, float lon1, float lat2, float lon2)
-{
-	// Convert latitudes and longitudes to radians
-	float lat1_rad = deg_to_radians(lat1);
-	float lon1_rad = deg_to_radians(lon1);
-	float lat2_rad = deg_to_radians(lat2);
-	float lon2_rad = deg_to_radians(lon2);
-
-	// Calculate difference in longitude
-	float delta_lon = lon2_rad - lon1_rad;
-
-	// Calculate heading
-	float y = sin(delta_lon) * cos(lat2_rad);
-	float x = cos(lat1_rad) * sin(lat2_rad) - sin(lat1_rad) * cos(lat2_rad) * cos(delta_lon);
-	float heading_rad = atan2(y, x);
-
-	// Convert heading to degrees
-	float heading_deg = heading_rad * (180.0 / M_PI);
-
-	// Normalize heading to 0 - 360
-	heading_deg = fmod(heading_deg + 360.0, 360.0);
-
-	return heading_deg;
+float to_degrees(float radians) {
+    return radians * 180.0 / M_PI;
 }
 
-float combine_coords(int8_t degrees, int8_t minutes, int8_t seconds)
+float gps_to_heading(float latitude1, float longitude1, float latitude2, float longitude2) {
+    // Convert latitude and longitude values to radians
+    latitude1 = to_radians(latitude1);
+    longitude1 = to_radians(longitude1);
+    latitude2 = to_radians(latitude2);
+    longitude2 = to_radians(longitude2);
+
+    // Calculate differences
+    float dLongitude = longitude2 - longitude1;
+
+    // Calculate X and Y
+    float X = cos(latitude2) * sin(dLongitude);
+    float Y = cos(latitude1) * sin(latitude2) - sin(latitude1) * cos(latitude2) * cos(dLongitude);
+
+    // Calculate bearing
+    float bearing = atan2(X, Y);
+
+    // Convert to degrees
+    bearing = to_degrees(bearing);
+
+    // Normalize bearing to a value between 0 degree and 360 degree
+    if(bearing < 0)
+        bearing += 360;
+
+    return bearing;
+}
+
+float combine_coords(uint8_t degrees, uint8_t minutes, uint8_t seconds, uint8_t hundredths)
 {
     float combined = 0.0;
 
-    // Combine hours, minutes, and seconds
+    // Combine degrees, minutes, seconds and hundredths
     combined += (float)degrees;
     combined += (float)minutes / 60.0;
-    combined += (float)seconds / 3600.0;
+    combined += ((float)seconds + (float)hundredths / 100.0) / 3600.0;
 
     return combined;
 }
 
-void split_coords(float gpsData, uint8_t *degrees, uint8_t *minutes, uint8_t *seconds)
+
+void split_coords(float gpsData, uint8_t *degrees, uint8_t *minutes, uint8_t *seconds, uint8_t *hundredths)
 {
-    // Split the degrees and minutes
-    int degreesInt = (int)(gpsData / 100);
-    float minutesFloat = gpsData - (degreesInt * 100);
+	uint8_t degreesInt, minutesInt, secondsInt, hundredthsInt;
 
-    // Split minutes and fractional minutes (seconds)
-    int minutesInt = (int)minutesFloat;
-    float secondsFloat = (minutesFloat - minutesInt) * 60;
+//	degreesInt = floorf(gpsData);
+//	minutesInt = floorf((gpsData - degreesInt) * 100);
+//	secondsInt = floorf((((gpsData - degreesInt) * 100) - minutesInt) * 100);
+//	hundredthsInt = floorf((((((gpsData - degreesInt) * 100) - minutesInt) * 100) - secondsInt) * 100);
 
-    // Round the seconds
-    int secondsInt = (int)(secondsFloat + 0.5);
-
-    // In case rounding up caused seconds to reach 60
-    if(secondsInt >= 60)
-    {
-        secondsInt -= 60;
-        minutesInt++;
-    }
-
-    // In case minutes reached 60
-    if(minutesInt >= 60)
-    {
-        minutesInt -= 60;
-        degreesInt++;
-    }
+	degreesInt = (uint8_t) gpsData;
+	float minutes_temp = (gpsData - degreesInt) * 60;
+	minutesInt = (uint8_t) minutes_temp;
+	float seconds_temp = (minutes_temp - minutesInt) * 60;
+	secondsInt = (uint8_t) seconds_temp;
+	hundredthsInt = (uint8_t) ((seconds_temp - secondsInt) * 100);
 
     *degrees = degreesInt;
     *minutes = minutesInt;
     *seconds = secondsInt;
+    *hundredths = hundredthsInt;
 }
+
 
 
 float get_distance(float lat1, float lon1, float lat2, float lon2)
 {
 
     // Convert latitudes and longitudes to radians
-    float lat1_rad = deg_to_radians(lat1);
-    float lon1_rad = deg_to_radians(lon1);
-    float lat2_rad = deg_to_radians(lat2);
-    float lon2_rad = deg_to_radians(lon2);
+    float lat1_rad = to_radians(lat1);
+    float lon1_rad = to_radians(lon1);
+    float lat2_rad = to_radians(lat2);
+    float lon2_rad = to_radians(lon2);
 
     // Calculate differences in latitude and longitude
     float delta_lat = lat2_rad - lat1_rad;
@@ -142,17 +139,21 @@ _Bool setBuzzer(float distance, float threshhold){
 }
 
 uint16_t setVibr(float headingIs, float headingMust, float rangeDeg){
-	uint16_t maxTim = 999;
+    uint16_t maxTim = 999;
 
-	float headingDiff = headingIs - headingMust;
-	if(headingDiff < 0.0){
-		headingDiff =+ 360.0;
-	}
+    float headingDiff = fmodf(fabsf(headingIs - headingMust), 360.0);
+    if (headingDiff > 180.0) {
+        headingDiff = 360.0 - headingDiff;
+    }
 
-	if(headingDiff < rangeDeg){
-		return (uint16_t)(maxTim - ((rangeDeg - headingDiff) * (maxTim / rangeDeg)));
-	} else {
-		return maxTim;
-	}
+    if(headingDiff <= rangeDeg){
+        return (uint16_t)(maxTim - ((headingDiff / rangeDeg) * maxTim));
+    } else {
+        return 0;
+    }
+}
 
+void clearBuffer(uint8_t* buffer, size_t bufferSize)
+{
+    memset(buffer, 0, bufferSize);
 }

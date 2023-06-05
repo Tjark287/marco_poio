@@ -134,6 +134,9 @@ float CM_getheading()
     // rad to degrees
     float heading_deg = heading_rad * 180 / M_PI;
 
+    // add declination
+    heading_deg += DECLINATION_VIENNA;
+
     // normalize heading
     if (heading_deg < 0) {
         heading_deg += 360;

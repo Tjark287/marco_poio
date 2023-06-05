@@ -13,6 +13,8 @@
 
 extern I2C_HandleTypeDef hi2c1;
 
+#define DECLINATION_VIENNA 5.7f
+
 #define CM_I2Caddr 		0b01100000
 #define CM_FREQ_1_5		0x02
 #define CM_FREQ_13		0x06

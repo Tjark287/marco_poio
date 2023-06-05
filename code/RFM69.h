@@ -42,11 +42,13 @@ uint8_t* RFM69_returnData();
 void RFM69_havedata(_Bool havedata);
 void RFM69_isSpy(_Bool amiaspy);
 void RFM69_reset();
+_Bool RFM69_isMode(uint8_t mode);
+uint8_t RFM69_DataLen();
 
 
 // DEFINES
 #define RF69_MAX_DATA_LEN       61 // to take advantage of the built in AES/CRC we want to limit the frame size to the internal FIFO size (66 bytes - 3 bytes overhead - 2 bytes crc)
-#define CSMA_LIMIT              -90 // upper RX signal sensitivity threshold in dBm for carrier sense access
+#define CSMA_LIMIT              -10 // upper RX signal sensitivity threshold in dBm for carrier sense access
 #define RF69_MODE_SLEEP         0 // XTAL OFF
 #define RF69_MODE_STANDBY       1 // XTAL ON
 #define RF69_MODE_SYNTH         2 // PLL ON

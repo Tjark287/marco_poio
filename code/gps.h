@@ -15,6 +15,7 @@ extern UART_HandleTypeDef huart1;
 
 #define GPS_receiveLen 500
 
+_Bool get_gnrmc_line(char *input, char *output, int outputSize);
 _Bool GPS_process(char *gpsData, float *latitude, float *longitude, uint8_t *numSatellites);
 
 

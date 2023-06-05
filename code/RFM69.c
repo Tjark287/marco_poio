@@ -119,6 +119,8 @@ void RFM69_setMode(uint8_t newMode)
 _Bool RFM69_canSend()
 {
 	if (_mode == RF69_MODE_RX && PAYLOADLEN == 0 && RFM69_readRSSI(false) < CSMA_LIMIT) // if signal stronger than -100dBm is detected assume channel activity
+//	if (_mode == RF69_MODE_RX) // if signal stronger than -100dBm is detected assume channel activity
+
 	{
 		RFM69_setMode(RF69_MODE_STANDBY);
 		return true;
@@ -265,8 +267,8 @@ void RFM69_sendFrame(uint16_t toAddress, const void* buffer, uint8_t bufferSize,
 
 	// no need to wait for transmit mode to be ready since its handled by the radio
 	RFM69_setMode(RF69_MODE_TX);
-	//uint32_t txStart = millis();
-	//while (digitalRead(_interruptPin) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
+//	uint32_t txStart = millis();
+//	while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0) == 0 && millis() - txStart < RF69_TX_LIMIT_MS); // wait for DIO0 to turn HIGH signalling transmission finish
 	while ((RFM69_readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PACKETSENT) == 0x00); // wait for PacketSent
 	RFM69_setMode(RF69_MODE_STANDBY);
 }
@@ -467,6 +469,7 @@ _Bool RFM69_initialize(uint8_t freqBand, uint16_t nodeID, uint8_t networkID)
 	if (millis()-start >= timeout) return false;
 
 	_address = nodeID;
+//	PAYLOADLEN = 0;
 
 	HAL_Delay(10); // wait 10ms to give RFM69 some time to relax
 
@@ -517,4 +520,13 @@ void RFM69_reset()
 	HAL_Delay(1);
 	HAL_GPIO_WritePin(RFM69_RST_GPIO_Port, RFM69_RST_Pin, RESET);
 	HAL_Delay(10);
+}
+
+_Bool RFM69_isMode(uint8_t mode){
+	if(_mode == mode) return true;
+	return false;
+}
+
+uint8_t RFM69_DataLen(){
+	return DATALEN;
 }
