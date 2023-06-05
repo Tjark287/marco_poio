@@ -1,41 +1,24 @@
-# marko_poio
+# Marco POIo Project
 
+The goal of the "Marco POIo" project is to assist blind people in navigating back to a known spot where a point of interest (POI) has been left behind. The wearable device provides haptic feedback in the form of vibrations to guide the user towards the POI when the user presses a button. Additionally, the stationary device emits a beeping sound when the user gets within a specified distance of the POI. Both devices are equipped with GPS, a microcontroller unit (MCU) and an ISR transceiver. The wearable device also includes a magnetic sensor to act as a compass, helping the user to navigate towards the stationary device.
 
-# Introduction 
-The goal of the "Marco POIo" project is to create a system of two devices that enable users to easily navigate and locate a stationary device in a specific location. One device is stationary and the other is wearable, with both devices equipped with GPS, a microcontroller unit (MCU), LoRaWAN and an interface. The wearable device also includes a magnetic sensor to act as a compass, helping the user to navigate towards the stationary device which has auditory feedback (beeper) to guide the user on the final approach. The user can interact with the system through a button on the and haptic feedback on the wearable device.
+**Software overview:**
+The main.c has two modes depending on loading the POI or the WEARABLE. Please use either the #define IS_POI or IS_WEARABLE depending on which device should be programmed. We used the minmea library by Kosma Moczek for nmea string decoding and partially ported the RFM69 library by Felix Rusu (LowPowerLab.com) to C for the ISM communications.
 
+**Disclaimer:**
+Please note that the project was created for a UNI project and is still in its early development phase. We do not recommend relying on the system as is for critical navigation purposes. We wish to improve on many areas, especially creating a more robust system for ISM communications, processing more of the available GPS NMEA sentences (currently only RMC processed) for a more stable location and a routine to calibrate the compass for more percise heading measurement as well as a generally improved system design.
 
-# GPS Module 
-L76 Series module
+**How To Build your own:**
 
-## UART
-The module provides one universal asynchronous receiver & transmitter serial port. The module is designed as a DCE (Data Communication Equipment), following the traditional DCE-DTE (Data Terminal Equipment) connection. The module and the client (DTE) are connected through the following signal shown as following figure. It supports data baud-rate from 4800bps to 115200bps.
+*Hardware Components required:*
+- Main Processor: STM32F411CEU - can vary, not much processing power is required
+- GPS Receiver: L76-M33
+- Radio: RFM69HW
+- Antenna: helical antenna used, any 868MHz antenna with SWR<2 is good
+- Magnetometer IC: MMC34160PJ
+- 3V3 vibration motor
+- 2x 2n7000 MOSFET
+- LEDSs + resistors
+- ST-Link V2 programmer
 
-### UART Ports
-- TXD1: Send data to the RXD signal line of DTE
-- RXD1: Receive data from the TXD signal line of DTE
-
-
-This UART port has the following features:
-- UART port can be used for firmware upgrade, NMEA output and PMTK proprietary messages input.
-- The default output NMEA type setting is RMC, VTG, GGA, GSA, GSV and GLL.
-- UART port supports the following data rates:
-4800, 9600, 14400, 19200, 38400, 57600, 115200.
-- The default setting is 9600bps, 8 bits, no parity bit, 1 stop bit.
-- Hardware flow control and synchronous operation are not supported.
-
-The UART port does not support the RS-232 level but only CMOS level. If the module’s UART port is connected to the UART port of a computer, it is necessary to add a level shift circuit between the module and the computer.
-
-## NMEA-Daten in Variablen speichern
-Um NMEA-Daten von Ihrem GPS-Modul in Variablen zu speichern, müssen Sie die empfangenen Daten zunächst analysieren und dann die relevanten Informationen auswählen und speichern. Hier sind einige Schritte, die Sie befolgen können, um NMEA-Daten in Variablen zu speichern:
-    Empfangen Sie die NMEA-Daten von Ihrem GPS-Modul über die serielle Schnittstelle und speichern Sie sie in einem Puffer.
-
-- Analysieren Sie den Puffer und suchen Sie nach den NMEA-Zeilen, die Informationen über die Position, Geschwindigkeit und Richtung des GPS-Empfängers enthalten. Diese Zeilen beginnen normalerweise mit "$GPGGA", "$GPRMC" oder "$GPVTG".
-
-- Verarbeiten Sie die gefundenen NMEA-Zeilen, um die relevanten Informationen zu extrahieren. Verwenden Sie beispielsweise die "strtok()" -Funktion in C oder eine ähnliche Funktion, um die Zeile in einzelne Teile zu zerlegen, die durch Kommas getrennt sind.
-
-- Speichern Sie die extrahierten Informationen in geeigneten Variablen. Zum Beispiel können Sie die Längen- und Breitengrad-Informationen in Fließkommazahlen speichern und die Zeitinformationen in einem Zeitstempel-Format speichern.
-
-- Verwenden Sie die gespeicherten Variablen, um Ihre Anwendung oder Ihre Benutzeroberfläche zu aktualisieren. Sie können die Positionsinformationen zum Beispiel auf einer Karte anzeigen oder die Geschwindigkeit und Richtung anzeigen.
-
-Es gibt auch verschiedene Bibliotheken und Frameworks, die Ihnen dabei helfen können, NMEA-Daten von Ihrem GPS-Modul zu verarbeiten und in Variablen zu speichern. Zum Beispiel gibt es die "TinyGPS++"-Bibliothek für Arduino, die Ihnen dabei hilft, GPS-Daten von Ihrem GPS-Modul zu verarbeiten und die relevanten Informationen in geeigneten Variablen zu speichern.
+Please refer to the schematic for details.
