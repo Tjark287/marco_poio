@@ -62,7 +62,7 @@ float gps_to_heading(float latitude1, float longitude1, float latitude2, float l
     // Convert to degrees
     bearing = to_degrees(bearing);
 
-    // Normalize bearing to a value between 0 degree and 360 degree
+    // Normalize bearing to a value between 0 degree and 360 degrees
     if(bearing < 0)
         bearing += 360;
 
@@ -85,11 +85,6 @@ float combine_coords(uint8_t degrees, uint8_t minutes, uint8_t seconds, uint8_t 
 void split_coords(float gpsData, uint8_t *degrees, uint8_t *minutes, uint8_t *seconds, uint8_t *hundredths)
 {
 	uint8_t degreesInt, minutesInt, secondsInt, hundredthsInt;
-
-//	degreesInt = floorf(gpsData);
-//	minutesInt = floorf((gpsData - degreesInt) * 100);
-//	secondsInt = floorf((((gpsData - degreesInt) * 100) - minutesInt) * 100);
-//	hundredthsInt = floorf((((((gpsData - degreesInt) * 100) - minutesInt) * 100) - secondsInt) * 100);
 
 	degreesInt = (uint8_t) gpsData;
 	float minutes_temp = (gpsData - degreesInt) * 60;
@@ -124,7 +119,7 @@ float get_distance(float lat1, float lon1, float lat2, float lon2)
     float c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     // Calculate the distance using the Earth's radius
-    float distance = EARTH_RADIUS_KM * c;
+    float distance = EARTH_RADIUS_M * c;
 
     return distance;
 }
