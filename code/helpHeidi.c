@@ -31,7 +31,7 @@ void serialPrint(const char *str, ...)
         buffer[len++] = '\n';
     }
 
-    HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, HAL_MAX_DELAY);
+    HAL_UART_Transmit(&huart2, (uint8_t *)buffer, len, 10);
 }
 
 float to_radians(float degrees) {

@@ -29,11 +29,17 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+/*
+ * GPS data structure
+ */
+
 struct gpsdata{
 	float lat, lon;
 	uint8_t numsat;
 };
 typedef struct gpsdata gpsdata_t;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -67,7 +73,9 @@ DMA_HandleTypeDef hdma_usart1_rx;
 //#define IS_POI
 #define IS_WEARABLE
 
-/* Wireless communication setup ----------------------------------------------*/
+/*
+ * wireless communication setup
+ */
 
 #ifdef IS_POI
 #define NODEID        3
@@ -77,7 +85,10 @@ DMA_HandleTypeDef hdma_usart1_rx;
 #define NODEID        2
 #endif
 
-/* common wireless settings --------------------------------------------------*/
+/*
+ * common wireless settings
+ */
+
 #define NETWORKID     100  //the same on all nodes that talk to each other
 #define FREQUENCY     RF69_868MHZ
 #define ENCRYPTKEY    "heidiheidiheidii" // exactly 16 characters/bytes
@@ -99,8 +110,14 @@ _Bool haveGPS = false;
 _Bool GPSvalid = false;
 _Bool txTimeout = false;
 _Bool rxTimeout = false;
+_Bool rfAvailable = false;
 
-// device-specific variables
+// txTimeout timer variable
+uint8_t txTimeoutTim = 0;
+
+/*
+ * device-specific variables
+ */
 
 #ifdef IS_POI
 // distance variable for buzzer activation
@@ -112,7 +129,6 @@ float distance;
 // heading search mode state variable for wearable + timer variable
 _Bool IS_headingMode = false; // init true for debug
 uint16_t headingModeTim = 0;
-uint8_t txTimeoutTim = 0;
 #define HEADINGMODE_TIME 300 - 1 // time device remains in headingmode x100ms
 
 // heading variable
@@ -180,7 +196,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /*
-   * setup both devices to be receiving, POI later starts sending after GPS data valid
+   * device & peripheral initialization
    */
 
 	// init of RFM69
@@ -213,7 +229,10 @@ int main(void)
 	extGPS.lat = 0.0f;
 	extGPS.lon = 0.0f;
 
-	// wearable specific setup
+	/*
+	 * wearable specific setup
+	 */
+
 	#ifdef IS_WEARABLE
 	// init tim1 ch3 to zero output
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
@@ -222,7 +241,7 @@ int main(void)
 	// init compass
 	if(!CM_init()){
 		sprintf(uartData, "compass init fail\r\n");
-		HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), HAL_MAX_DELAY);
+		HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), 10);
 	}
 	#endif
 
@@ -233,10 +252,142 @@ int main(void)
   while (1)
   {
 
+		// call data management function, proceed if data available
+		if(rfAvailable && RFM69_receiveDone()){
+
+			// read RSSI
+			// int16_t rssi = RFM69_readRSSI(false);
+
+			// get pointer to received data
+			uint8_t* dataP = RFM69_returnData();
+
+			// save received coords in external GPS variable
+			extGPS.lat = combine_coords(dataP[0], dataP[1], dataP[2], dataP[3]);
+			extGPS.lon = combine_coords(dataP[4], dataP[5], dataP[6], dataP[7]);
+
+			// reset rfAvailable flag
+			rfAvailable = false;
+
+			// gets set on first received GPS data from other device
+			if(extGPS.lat != 0.0f && extGPS.lon != 0.0f) haveReceived = true;
+		}
+
+
 		#ifdef IS_WEARABLE
+		// wearable sends data, faster when in heading mode
+		uint8_t sendLen = 8;
+		if(GPSvalid && !txTimeout){
+			uint8_t txData[sendLen];
+			uint8_t d_lat, m_lat, s_lat, h_lat, d_lon, m_lon, s_lon, h_lon;
+			uint16_t toAddress = 3;
+
+			// split coords to integer for tx
+			split_coords(myGPS.lat, &d_lat, &m_lat, &s_lat, &h_lat);
+			split_coords(myGPS.lon, &d_lon, &m_lon, &s_lon, &h_lon);
+
+			// assemble packet
+			txData[0] = d_lat;
+			txData[1] = m_lat;
+			txData[2] = s_lat;
+			txData[3] = h_lat;
+			txData[4] = d_lon;
+			txData[5] = m_lon;
+			txData[6] = s_lon;
+			txData[7] = h_lon;
+
+			// send GPS data to other device
+			RFM69_receiveBegin();
+
+			if (RFM69_canSend()){
+
+				// send data
+				RFM69_send(toAddress, txData, sendLen, false);
+
+				// enable timeout only if tx success
+				//txTimeout = true;
+
+				// start listening again
+				RFM69_receiveBegin();
+			}
+
+			// enable timeout independend of tx success
+			txTimeout = true;
+		}
+
+		if(IS_headingMode){
+
+			// get my heading (-1.0f if invalid)
+			float heading = CM_getheading();
+
+			// set vibration if heading and GPS valid
+			if(heading != -1.0f && haveGPS && haveReceived){
+				float gpsHead = gps_to_heading(extGPS.lat, extGPS.lon, myGPS.lat, myGPS.lon);
+				TIM1->CCR3 = setVibr(heading, gpsHead, 45.0);
+			} else {
+				// turn motor off
+				TIM1->CCR3 = VIB_OFF;
+			}
+		} else {
+			// turn motor off
+			TIM1->CCR3 = VIB_OFF;
+		}
 		#endif
 
 		#ifdef IS_POI
+		if(GPSvalid && !txTimeout){
+			uint8_t sendLen = 8;
+			uint8_t txData[sendLen];
+			uint8_t d_lat, m_lat, s_lat, h_lat, d_lon, m_lon, s_lon, h_lon;
+			uint16_t toAddress = 2;
+
+			// split coords to integer for tx
+			split_coords(myGPS.lat, &d_lat, &m_lat, &s_lat, &h_lat);
+			split_coords(myGPS.lon, &d_lon, &m_lon, &s_lon, &h_lon);
+
+			// assemble packet
+			txData[0] = d_lat;
+			txData[1] = m_lat;
+			txData[2] = s_lat;
+			txData[3] = h_lat;
+			txData[4] = d_lon;
+			txData[5] = m_lon;
+			txData[6] = s_lon;
+			txData[7] = h_lon;
+
+			// send GPS data to other device
+			RFM69_setMode(RF69_MODE_RX);
+
+			if (RFM69_canSend()){
+
+				// send data
+				RFM69_send(toAddress, txData, sendLen, false);
+
+				// Debug message
+				sprintf(uartData, "\nTX Complete\r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), 10);
+
+				// start tx
+				RFM69_setMode(RF69_MODE_TX);
+			}
+
+			// put RFM69 back in receive mode, listen for more
+			RFM69_receiveBegin();
+
+			// reset timeToSend bool
+			txTimeout = true;
+		}
+		// set buzzer if wearable is near
+		if(haveGPS && haveReceived){
+			// check distance
+			if(get_distance(myGPS.lat, myGPS.lon, extGPS.lat, extGPS.lon) < DISTANCE_TO_BUZZ){
+				// Buzzer on
+				HAL_GPIO_WritePin(UI_BUZZ_GPIO_Port, UI_BUZZ_Pin, SET);
+			} else {
+				// Buzzer off
+				HAL_GPIO_WritePin(UI_BUZZ_GPIO_Port, UI_BUZZ_Pin, RESET);
+
+			}
+		}
 		#endif
 
 
@@ -660,49 +811,39 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	 * on RFM69 interrupt pin callback, process received data.
 	 */
 
+    // user button interrupt
+    if(GPIO_Pin == GPIO_PIN_1)
+    {
+		#ifdef IS_WEARABLE
+		IS_headingMode = true;
+		#endif
+		return;
+    }
+
+    // RFM69 packet received interrupt
     if(GPIO_Pin == GPIO_PIN_0 && RFM69_isMode(RF69_MODE_RX))
     {
     	// set "_havedata" to true
     	RFM69_havedata(true);
-
-    	// call data management function
-    	RFM69_receiveDone();
-
-		// read RSSI
-//		int16_t rssi = RFM69_readRSSI(false);
-
-    	// get pointer to received data
-		uint8_t* dataP = RFM69_returnData();
-
-		// save received coords in external GPS variable
-		extGPS.lat = combine_coords(dataP[0], dataP[1], dataP[2], dataP[3]);
-		extGPS.lon = combine_coords(dataP[4], dataP[5], dataP[6], dataP[7]);
-
-		// gets set on first received GPS data from other device
-		if(extGPS.lat != 0.0f && extGPS.lon != 0.0f) haveReceived = true;
-
+    	rfAvailable = true;
     }
 
-    // user button interrupt
-    if(GPIO_Pin == GPIO_PIN_1){
-		#ifdef IS_WEARABLE
-		IS_headingMode = true;
-		#endif
-    }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	extern char GPS_recBuffer[GPS_receiveLen];
-
-	rxTimeout = true;
-
 	float lat, lon;
 	uint8_t numsat;
 	char rmcline[MINMEA_MAX_SENTENCE_LENGTH];
 
-	get_gnrmc_line(GPS_recBuffer, rmcline, MINMEA_MAX_SENTENCE_LENGTH);
-	GPSvalid = GPS_process(rmcline, &lat, &lon, &numsat);
+	// enable UART rx timeout
+	rxTimeout = true;
+
+	// if gnrmc line found, process line and validate GPS
+	if(get_gnrmc_line(GPS_recBuffer, rmcline, MINMEA_MAX_SENTENCE_LENGTH)){
+		GPSvalid = GPS_process(rmcline, &lat, &lon, &numsat);
+	}
 
 	if(GPSvalid){
 		// sets haveGps true on first valid receive
@@ -723,7 +864,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		// 250ms TIMER - UNUSED
 	}
 
-	// heartbeat timer (11) - 10Hz
+	// 10Hz timer (tim11)
 	if (htim == &htim11){
 
 		// indicator LED
@@ -736,131 +877,37 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		// heartbeat LED
 		HAL_GPIO_TogglePin(LD_2_GPIO_Port, LD_2_Pin);
 
-		// UART rxTimeout reset
+
+		// reset timeout and start UART receive again
 		extern char GPS_recBuffer[GPS_receiveLen];
 		static uint8_t uartCounter;
-		if (rxTimeout) uartCounter++;
-		if(uartCounter > 2){
-			rxTimeout = false;
-			uartCounter = 0;
-			HAL_UART_Receive_DMA(&huart1, (uint8_t*)GPS_recBuffer, GPS_receiveLen);
-		}
 
-		#ifdef IS_POI
-		// set buzzer if wearable is near
-		if(haveGPS && haveReceived){
-			if(get_distance(myGPS.lat, myGPS.lon, extGPS.lat, extGPS.lon) < DISTANCE_TO_BUZZ){
-				HAL_GPIO_WritePin(UI_BUZZ_GPIO_Port, UI_BUZZ_Pin, SET);
-			} else {
-				HAL_GPIO_WritePin(UI_BUZZ_GPIO_Port, UI_BUZZ_Pin, RESET);
+		if(rxTimeout){
+			if(uartCounter++ > 5){
+				rxTimeout = false;
+				uartCounter = 0;
+				HAL_UART_Receive_DMA(&huart1, (uint8_t*)GPS_recBuffer, GPS_receiveLen);
 			}
-
 		}
-		static uint8_t gpsTxCounter;
-		static _Bool timeToSend;
-		gpsTxCounter++;
-		if(gpsTxCounter > 9){
-			gpsTxCounter = 0;
-			timeToSend = true;
-		}
-		if(GPSvalid && timeToSend){
-			uint8_t sendLen = 8;
-			uint8_t txData[sendLen];
-			uint8_t d_lat, m_lat, s_lat, h_lat, d_lon, m_lon, s_lon, h_lon;
-			uint16_t toAddress = 2;
 
-			split_coords(myGPS.lat, &d_lat, &m_lat, &s_lat, &h_lat);
-			split_coords(myGPS.lon, &d_lon, &m_lon, &s_lon, &h_lon);
-
-			txData[0] = d_lat;
-			txData[1] = m_lat;
-			txData[2] = s_lat;
-			txData[3] = h_lat;
-			txData[4] = d_lon;
-			txData[5] = m_lon;
-			txData[6] = s_lon;
-			txData[7] = h_lon;
-
-			// send GPS data to other device
-			RFM69_setMode(RF69_MODE_RX);
-
-			if (RFM69_canSend()){
-				RFM69_send(toAddress, txData, sendLen, false);
-				sprintf(uartData, "\nTX Complete\r\n");
-				HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), HAL_MAX_DELAY);
-				RFM69_setMode(RF69_MODE_TX);
+		// reset tx timeout depending on mode
+		if(txTimeout){
+			if (txTimeoutTim++ > 9){
+				txTimeout = false;
+				txTimeoutTim = 0;
 			}
-
-			// put RFM69 back in receive mode, listen for more
-			RFM69_receiveBegin();
-
-			// reset timeToSend bool
-			timeToSend = false;
 		}
-		#endif
 
 		#ifdef IS_WEARABLE
-	    // reset tx timeout depending on mode
-	    if(txTimeout){
-	    	if (txTimeoutTim > 9 && !IS_headingMode){
-	    		txTimeout = false;
-	    		txTimeoutTim = 0;
-	    	}
-	    	if (txTimeoutTim > 4 && IS_headingMode){
-	    		txTimeout = false;
-	    		txTimeoutTim = 0;
-	    	}
-	    }
-
-		// wearable sends data, faster when in heading mode
-		uint8_t sendLen = 8;
-		if(GPSvalid && !txTimeout){
-			uint8_t txData[sendLen];
-			uint8_t d_lat, m_lat, s_lat, h_lat, d_lon, m_lon, s_lon, h_lon;
-			uint16_t toAddress = 3;
-
-			split_coords(myGPS.lat, &d_lat, &m_lat, &s_lat, &h_lat);
-			split_coords(myGPS.lon, &d_lon, &m_lon, &s_lon, &h_lon);
-
-			txData[0] = d_lat;
-			txData[1] = m_lat;
-			txData[2] = s_lat;
-			txData[3] = h_lat;
-			txData[4] = d_lon;
-			txData[5] = m_lon;
-			txData[6] = s_lon;
-			txData[7] = h_lon;
-
-			// send GPS data to other device
-			RFM69_receiveBegin();
-
-			if (RFM69_canSend()){
-				RFM69_send(toAddress, txData, sendLen, false);
-				txTimeout = true;
-				RFM69_receiveBegin(); // start listening again
-			}
-
-		}
-
+		// reset heading mode timer
 		if(IS_headingMode){
-
-			// get my heading
-			float heading = CM_getheading();
-
-			// set vibration
-			if(haveGPS && GPSvalid && haveReceived){
-				float gpsHead = gps_to_heading(extGPS.lat, extGPS.lon, myGPS.lat, myGPS.lon);
-				uint16_t vibstr = setVibr(heading, gpsHead, 45.0);
-				TIM1->CCR3 = vibstr;
-			}
 			if(headingModeTim++ > HEADINGMODE_TIME){
 				IS_headingMode = false;
 				headingModeTim = 0;
 			}
-		} else {
-			TIM1->CCR3 = VIB_OFF;
-		}
+	    }
 		#endif
+
 	}
 }
 /* USER CODE END 4 */
@@ -877,7 +924,7 @@ void Error_Handler(void)
 
   clearBuffer((uint8_t*)uartData, UARTbufLen);
   sprintf(uartData, "SYSTEM ERROR, dude\r\n");
-  HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2, (uint8_t*)uartData, sizeof(uartData), 10);
 
   while (1)
   {

@@ -49,6 +49,11 @@ _Bool GPS_process(char *line, float *latitude, float *longitude, uint8_t *numSat
 //	if(line == NULL) return false;
 
 	switch (minmea_sentence_id(line, false)) {
+
+	case MINMEA_INVALID: {
+		return false;
+	} break;
+
 	case MINMEA_SENTENCE_RMC: {
 		struct minmea_sentence_rmc frame;
 		if (minmea_parse_rmc(&frame, line)) {
@@ -60,10 +65,6 @@ _Bool GPS_process(char *line, float *latitude, float *longitude, uint8_t *numSat
 		else {
 			return false;
 		}
-	} break;
-
-	case MINMEA_INVALID: {
-		return false;
 	} break;
 
 	default: {

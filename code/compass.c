@@ -21,7 +21,7 @@ static float offset[3]; // global offset variable
 _Bool CM_writeReg(uint8_t adr, uint8_t val)
 {
 	uint8_t sendData[2] = {adr, val};
-	if (HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, sendData, 2, HAL_MAX_DELAY) == HAL_OK){
+	if (HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, sendData, 2, 10) == HAL_OK){
 		return true;
 	}
 
@@ -31,8 +31,8 @@ _Bool CM_writeReg(uint8_t adr, uint8_t val)
 uint8_t CM_readReg(uint8_t adr)
 {
 	uint8_t recData;
-	HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, &adr, 1, HAL_MAX_DELAY);
-	HAL_I2C_Master_Receive(&hi2c1, CM_I2Caddr, &recData, 1, HAL_MAX_DELAY);
+	HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, &adr, 1, 10);
+	HAL_I2C_Master_Receive(&hi2c1, CM_I2Caddr, &recData, 1, 10);
 	return recData;
 }
 
@@ -98,8 +98,8 @@ _Bool CM_readMag(uint16_t* X, uint16_t* Y, uint16_t* Z)
 	while(!(CM_readReg(0x06) & 0x01)){
 	}
 	// read data
-	ack += HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, &start, 1, HAL_MAX_DELAY);
-	ack += HAL_I2C_Master_Receive(&hi2c1, CM_I2Caddr, rxData, 6, HAL_MAX_DELAY);
+	ack += HAL_I2C_Master_Transmit(&hi2c1, CM_I2Caddr, &start, 1, 10);
+	ack += HAL_I2C_Master_Receive(&hi2c1, CM_I2Caddr, rxData, 6, 10);
 	if (ack != 0) return false;
 
 	*X = (rxData[1] << 8) | rxData[0];
