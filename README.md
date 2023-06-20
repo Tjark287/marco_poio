@@ -24,8 +24,12 @@ Please note that the project was created for a UNI project and is still in its e
 Please refer to the schematic for details.
 
 ## Prototype devices
+For testing and in-class presentation we made 2 crude prototypes of our devices:
+*POI:*
+![POI prototype](https://github.com/Tjark287/marco_poio/img/POI_proto.jpg?raw=true)
+*Wearable:*
+![WEARABLE prototype](https://github.com/Tjark287/marco_poio/img/WEARABLE_proto.jpg?raw=true)
 
-INSERT IMAGES from /img folder!!!
 
 
 ## How to use Marco POIo
