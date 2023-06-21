@@ -58,3 +58,17 @@ The "Marco POIo" device consists of two parts: the Point of Interest (POI) and t
 - This will stop the beeping, and the POI will automatically turn off.
 
 Note: Make sure to activate the POI and Wearable, wait for the ready-beep and only then leave your spot. Please note that the device is still in the development phase and is not recommended for critical navigation situations. Do not rely solely on this device; use it as a support for your orientation.
+
+
+## Design 
+The development of the wearable focuses on finding the best wearing position, preferably on the wrist with a wrist strap or Velcro for ease of use. The wearable should be inexpensive and have Braille on the outside describing which way the device should be properly attached to the arm. It provides tactile feedback for navigation and a user-friendly interface.
+The challenge is to develop a waterproof housing that is also light enough and does not interfere with signal transmission. Special materials, seals and coatings are being considered to prevent water ingress and ensure device performance.
+Work is ongoing to develop and optimize the design to ensure the wearable is practical to implement and meets requirements. Consideration will be given to wearing position, accessibility through Braille, tactile feedback, water resistance, and ease of use. The goal is to create a wearable that provides an effective navigation solution for blind people while being comfortable and easy to use.
+
+### Mockup Idea 1:
+In this design idea, the wearable is attached to an arm holder by simply clicking it into the holder. After swimming, the wearable can be removed from the holder by a mechanical mechanism. It is activated by pressing a button. The elongated wearable then moves in front of itself like a blind stick. More intense vibration signals the user which direction to go.
+
+### Mockup Idea 2:
+The second design idea involves attaching the wearable to a wristwatch. The case of the wearable can be easily attached to any watch band. Braille on the case clarifies where the front and back are located. Once on the water, you hold your arm in front of you as if you were looking at the watch and press the button on the side of the case. Intense vibration signals the user which way to go.
+
+
