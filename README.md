@@ -26,9 +26,9 @@ Please refer to the schematic for details.
 ## Prototype devices
 For testing and in-class presentation we made 2 crude prototypes of our devices:
 *POI:*
-![POI prototype](https://github.com/Tjark287/marco_poio/Hardware/POI_Prototype.jpg?raw=true)
+![POI prototype](https://github.com/Tjark287/marco_poio/Hardware/POI_Prototype.jpeg?raw=true)
 *Wearable:*
-![WEARABLE prototype](https://github.com/Tjark287/marco_poio/Hardware/WEARABLE_Prototype.jpg?raw=true)
+![WEARABLE prototype](https://github.com/Tjark287/marco_poio/Hardware/WEARABLE_Prototype.jpeg?raw=true)
 
 
 
